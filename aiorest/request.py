@@ -6,6 +6,9 @@ from urllib.parse import urlsplit, parse_qsl
 
 from aiohttp.multidict import MultiDict, MutableMultiDict
 
+from .errors import RESTError
+
+
 __all__ = [
     'Request',
     'Response',
@@ -116,8 +119,12 @@ class Request:
             if self._request_body:
                 # TODO: store generated exception and
                 # don't try to parse json next time
-                self._json_body = json.loads(self._request_body
-                                                 .decode('utf-8'))
+                try:
+                    self._json_body = json.loads(self._request_body
+                                                .decode('utf-8'))
+                except (ValueError, UnicodeDecodeError):
+                    raise RESTError(400, 'JSON not valid')
+
             else:
                 raise ValueError("Request has no a body")
         return self._json_body
