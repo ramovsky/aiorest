@@ -2,7 +2,7 @@ import unittest
 
 import asyncio
 import aiohttp
-from aiorest import RESTServer
+from aiorest import RESTServer, status_code
 import json
 
 
@@ -19,6 +19,10 @@ class REST:
         self.case.assertEqual('123', id)
         self.case.assertEqual({'q': 'val'}, request.json_body)
         return {'success': True}
+
+    @status_code(201)
+    def func_POST_code(self):
+        return {'created': True}
 
     def func_GET(self, id: int, req):
         self.case.assertEqual(123, id)
@@ -70,6 +74,8 @@ class ServerTests(unittest.TestCase):
         rest = REST(self)
         self.server.add_url('POST', '/post/{id}', rest.func_POST,
                             use_request=True)
+        self.server.add_url('POST', '/create/', rest.func_POST_code)
+
         self.server.add_url('GET', '/post/{id}', rest.func_GET,
                             use_request='req')
         self.server.add_url('GET', '/post/{id}/2', rest.func_GET2,
@@ -228,3 +234,24 @@ class ServerTests(unittest.TestCase):
             enc = headers['CONTENT-ENCODING']
             self.assertEqual('gzip', enc)
         self.loop.run_until_complete(query())
+
+    def test_status_code(self):
+        srv = self.loop.run_until_complete(self.loop.create_server(
+            self.server.make_handler,
+            '127.0.0.1', 0))
+        self.port = port = server_port(srv)
+        url = 'http://127.0.0.1:{}/create/'.format(port)
+
+        def query():
+            response = yield from aiohttp.request(
+                'POST', url,
+                headers={'Content-Type': 'application/json'},
+                loop=self.loop)
+            self.assertEqual(201, response.status)
+            data = yield from response.read()
+            self.assertEqual(b'{"created": true}', data)
+
+        self.loop.run_until_complete(query())
+
+        srv.close()
+        self.loop.run_until_complete(srv.wait_closed())
