@@ -34,7 +34,7 @@ def _parse_version(ver):
 version_info = _parse_version(__version__)
 
 
-from .server import RESTServer
+from .server import RESTServer, status_code
 from .request import Request, Response
 from .errors import RESTError
 

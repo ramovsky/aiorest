@@ -89,9 +89,10 @@ class RouterTests(unittest.TestCase):
         request = Request('host', aiohttp.RawRequestMessage(
             'GET', '/post/123', '1.1', {}, True, None),
             None, loop=self.loop)
-        ret = self.loop.run_until_complete(self.server.dispatch(request))
+        ret, code = self.loop.run_until_complete(self.server.dispatch(request))
         # json.loads is required to avoid items order in dict
         self.assertEqual({"b": 2, "a": 1}, json.loads(ret))
+        self.assertEqual(200, code)
 
     def test_dispatch_with_ending_slash(self):
         def f(id):
@@ -101,9 +102,10 @@ class RouterTests(unittest.TestCase):
         request = Request('host', aiohttp.RawRequestMessage(
             'GET', '/post/123/', '1.1', {}, True, None),
             None, loop=self.loop)
-        ret = self.loop.run_until_complete(self.server.dispatch(request))
+        ret, code = self.loop.run_until_complete(self.server.dispatch(request))
         # json.loads is required to avoid items order in dict
         self.assertEqual({"b": 2, "a": 1}, json.loads(ret))
+        self.assertEqual(200, code)
 
     def test_dispatch_with_ending_slash_not_found1(self):
         def f(id):
@@ -198,6 +200,7 @@ class RouterTests(unittest.TestCase):
             'GET', '/post/123', '1.1', {}, True, None),
             None, loop=self.loop)
 
-        ret = self.loop.run_until_complete(self.server.dispatch(request))
+        ret, code = self.loop.run_until_complete(self.server.dispatch(request))
         # json.loads is required to avoid items order in dict
         self.assertEqual({"b": 2, "a": 1}, json.loads(ret))
+        self.assertEqual(200, code)
