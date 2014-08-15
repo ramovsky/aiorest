@@ -13,6 +13,7 @@ from .handler import RESTRequestHandler
 
 __all__ = [
     'RESTServer',
+    'status_code',
     ]
 
 
@@ -156,6 +157,7 @@ class RESTServer:
             request.response.headers.extend(headers)
 
         handler = entry.handler
+        status_code = getattr(handler, 'status_code', 200)
         sig = inspect.signature(handler)
         kwargs = match.groupdict()
         if entry.use_request:
@@ -176,7 +178,7 @@ class RESTServer:
             raise aiohttp.HttpErrorException(500,
                                              "Internal Server Error") from exc
         else:
-            return json.dumps(ret)
+            return json.dumps(ret), status_code
 
     def construct_args(self, sig, kwargs):
         try:
@@ -241,3 +243,13 @@ class RESTServer:
             yield ('Access-Control-Allow-Headers', allow_headers)
         if allow_creds:
             yield ('Access-Control-Allow-Credentials', allow_creds and 'true')
+
+
+def status_code(code):
+    assert isinstance(code, int), 'Only `int` status codes allowed'
+
+    def decorator(func):
+        func.status_code = code
+        return func
+
+    return decorator
